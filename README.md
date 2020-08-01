@@ -1,5 +1,5 @@
 # lookip
-Save your publish ip address to AliDns
+Save your public ip address to AliDns
 
 ## Usage
 
