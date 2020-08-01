@@ -1,5 +1,7 @@
-FROM golang:1.9-alpine as builder
+FROM golang:1.13-alpine as builder
 WORKDIR /
+RUN pwd
+RUN ls
 RUN CGO_ENABLED=0 GOOS=linux go build -o app .
 
 FROM bysir/alpine-shanghai
