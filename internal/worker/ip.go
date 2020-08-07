@@ -12,15 +12,17 @@ type IpWorker struct {
 	domain string
 	rr     string
 
-	aliCli *alidns.AliDns
+	aliCli   *alidns.AliDns
+	ipGetter public_ip.IpGetter
 }
 
-func NewIpWorker(regionId, accessKey string, accessSecret string, domain string, rr string) *IpWorker {
+func NewIpWorker(regionId, accessKey string, accessSecret string, domain string, rr string, ipGetter public_ip.IpGetter) *IpWorker {
 	client := alidns.NewAliDns(regionId, accessKey, accessSecret)
 	return &IpWorker{
-		aliCli: client,
-		domain: domain,
-		rr:     rr,
+		aliCli:   client,
+		domain:   domain,
+		rr:       rr,
+		ipGetter: ipGetter,
 	}
 }
 
@@ -29,7 +31,7 @@ var nowIp = ""
 // 将自己的公网ip上传到dns
 func (i *IpWorker) LoopUpdateIp(ctx context.Context) {
 	for {
-		ip, err := public_ip.Get()
+		ip, err := i.ipGetter.Ip()
 		if err != nil {
 			select {
 			case <-ctx.Done():

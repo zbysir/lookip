@@ -2,8 +2,10 @@ package main
 
 import (
 	"github.com/urfave/cli/v2"
+	"github.com/zbysir/lookip/internal/lib/public_ip"
 	"github.com/zbysir/lookip/internal/pkg/signal"
 	"github.com/zbysir/lookip/internal/worker"
+	"log"
 	"os"
 	"sync"
 )
@@ -45,6 +47,13 @@ func main() {
 			Required: false,
 			Value:    "zh-hangzhou",
 		},
+		&cli.StringFlag{
+			Name:     "ip-getter",
+			Usage:    "ip-getter, Can use values from the following array: [httpbin(httpbin.org}, 3322(3322.net)]",
+			EnvVars:  []string{"IP_GETTER"},
+			Required: false,
+			Value:    "httpbin",
+		},
 	}
 	c.Action = func(c *cli.Context) error {
 		ctx, _ := signal.NewTermContext()
@@ -59,7 +68,13 @@ func main() {
 			key := c.String("access-key-id")
 			secret := c.String("access-key-secret")
 			rr := c.String("rr")
-			w := worker.NewIpWorker(regionId, key, secret, domain, rr)
+			ipGetter := c.String("ip-getter")
+
+			g := public_ip.Factory(ipGetter)
+
+			log.Printf("use `%s` to get ip", g.Name())
+
+			w := worker.NewIpWorker(regionId, key, secret, domain, rr, g)
 			w.LoopUpdateIp(ctx)
 		}()
 
