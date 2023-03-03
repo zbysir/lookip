@@ -102,7 +102,7 @@ func main() {
 						log.Fatalf("dns type `%s` not support", d)
 					}
 
-					switch dnsType {
+					switch d {
 					case "cloudflare":
 						dnss = append(dnss, cloudflare.NewDNS(secret, cfZoneId, name))
 					default:
