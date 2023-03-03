@@ -3,10 +3,14 @@ package main
 import (
 	"github.com/urfave/cli/v2"
 	"github.com/zbysir/lookip/internal/lib/public_ip"
+	dns2 "github.com/zbysir/lookip/internal/pkg/dns"
+	"github.com/zbysir/lookip/internal/pkg/dns/alidns"
+	"github.com/zbysir/lookip/internal/pkg/dns/cloudflare"
 	"github.com/zbysir/lookip/internal/pkg/signal"
 	"github.com/zbysir/lookip/internal/worker"
 	"log"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -17,28 +21,46 @@ func main() {
 	c.Version = ""
 	c.Flags = []cli.Flag{
 		&cli.StringFlag{
-			Name:     "domain",
-			Usage:    "domain, e.g. baidu.com",
-			EnvVars:  []string{"DOMAIN"},
+			Name:     "name",
+			Usage:    "e.g. '*.domain.com' or 'domain.com'",
+			EnvVars:  []string{"NAME"},
 			Required: true,
 		},
 		&cli.StringFlag{
-			Name:     "rr",
-			Usage:    "e.g. www / *",
-			EnvVars:  []string{"RR"},
-			Required: true,
+			Name:     "domain",
+			Usage:    "e.g. domain.com",
+			EnvVars:  []string{"DOMAIN"},
+			Required: false,
+		},
+		&cli.StringFlag{
+			Name:     "dns",
+			Usage:    "'ali' or 'cloudflare'",
+			EnvVars:  []string{"DNS"},
+			Required: false,
 		},
 		&cli.StringFlag{
 			Name:     "access-key-id",
 			Usage:    "ali AccessKeyID",
 			EnvVars:  []string{"ACCESS_KEY_ID"},
-			Required: true,
+			Required: false,
 		},
 		&cli.StringFlag{
 			Name:     "access-key-secret",
 			Usage:    "ali AccessKeySecret",
 			EnvVars:  []string{"ACCESS_KEY_SECRET"},
-			Required: true,
+			Required: false,
+		},
+		&cli.StringFlag{
+			Name:     "cf_token",
+			Usage:    "cloudflare token",
+			EnvVars:  []string{"CF_TOKEN"},
+			Required: false,
+		},
+		&cli.StringFlag{
+			Name:     "cf_zone_id",
+			Usage:    "cloudflare zone id",
+			EnvVars:  []string{"CF_ZONE_ID"},
+			Required: false,
 		},
 		&cli.StringFlag{
 			Name:     "region-id",
@@ -65,16 +87,38 @@ func main() {
 			defer wg.Done()
 			regionId := c.String("region-id")
 			domain := c.String("domain")
+			cfZoneId := c.String("cf_zone_id")
 			key := c.String("access-key-id")
 			secret := c.String("access-key-secret")
-			rr := c.String("rr")
+			name := c.String("name")
 			ipGetter := c.String("ip-getter")
+			dnsType := c.String("dns")
+
+			var dnss []dns2.DNS
+
+			if dnsType != "" {
+				for _, d := range strings.Split(dnsType, ",") {
+					if d != "ali" && d != "cloudflare" {
+						log.Fatalf("dns type `%s` not support", d)
+					}
+
+					switch dnsType {
+					case "cloudflare":
+						dnss = append(dnss, cloudflare.NewDNS(secret, cfZoneId, name))
+					default:
+						dnss = append(dnss, alidns.NewAliDns(regionId, key, secret, domain, name))
+					}
+				}
+			} else {
+				dnss = append(dnss, alidns.NewAliDns(regionId, key, secret, domain, name))
+			}
 
 			g := public_ip.Factory(ipGetter)
 
 			log.Printf("use `%s` to get ip", g.Name())
+			log.Printf("use `%s` to update dns", dnsType)
 
-			w := worker.NewIpWorker(regionId, key, secret, domain, rr, g)
+			w := worker.NewIpWorker(dns2.NewCombinedDNS(dnss), g)
 			w.LoopUpdateIp(ctx)
 		}()
 

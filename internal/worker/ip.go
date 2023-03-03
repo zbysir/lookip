@@ -3,32 +3,27 @@ package worker
 import (
 	"context"
 	"github.com/zbysir/lookip/internal/lib/public_ip"
-	"github.com/zbysir/lookip/internal/pkg/alidns"
+	"github.com/zbysir/lookip/internal/pkg/dns"
 	"log"
 	"time"
 )
 
 type IpWorker struct {
-	domain string
-	rr     string
+	dns dns.DNS
 
-	aliCli   *alidns.AliDns
 	ipGetter public_ip.IpGetter
 }
 
-func NewIpWorker(regionId, accessKey string, accessSecret string, domain string, rr string, ipGetter public_ip.IpGetter) *IpWorker {
-	client := alidns.NewAliDns(regionId, accessKey, accessSecret)
+func NewIpWorker(dns dns.DNS, ipGetter public_ip.IpGetter) *IpWorker {
 	return &IpWorker{
-		aliCli:   client,
-		domain:   domain,
-		rr:       rr,
+		dns:      dns,
 		ipGetter: ipGetter,
 	}
 }
 
 var nowIp = ""
 
-// 将自己的公网ip上传到dns
+// LoopUpdateIp 将自己的公网 ip 上传到dns
 func (i *IpWorker) LoopUpdateIp(ctx context.Context) {
 	for {
 		ip, err := i.ipGetter.Ip()
@@ -45,7 +40,7 @@ func (i *IpWorker) LoopUpdateIp(ctx context.Context) {
 		}
 
 		if ip != nowIp {
-			_, err := i.aliCli.UpdateOrCreateDomainRecord(i.domain, i.rr, "A", ip)
+			err := i.dns.UpdateRecord(context.Background(), ip)
 			if err != nil {
 				log.Print(err)
 				time.Sleep(3 * time.Second)
