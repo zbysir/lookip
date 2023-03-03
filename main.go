@@ -88,6 +88,7 @@ func main() {
 			regionId := c.String("region-id")
 			domain := c.String("domain")
 			cfZoneId := c.String("cf_zone_id")
+			cfToken := c.String("cf_token")
 			key := c.String("access-key-id")
 			secret := c.String("access-key-secret")
 			name := c.String("name")
@@ -104,7 +105,7 @@ func main() {
 
 					switch d {
 					case "cloudflare":
-						dnss = append(dnss, cloudflare.NewDNS(secret, cfZoneId, name))
+						dnss = append(dnss, cloudflare.NewDNS(cfToken, cfZoneId, name))
 					default:
 						dnss = append(dnss, alidns.NewAliDns(regionId, key, secret, domain, name))
 					}
