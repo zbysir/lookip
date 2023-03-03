@@ -16,9 +16,13 @@ func TestDNS_List(t *testing.T) {
 }
 
 func TestUpdateRecordByName(t *testing.T) {
-	d := DNS{token: "xx"}
+	d := DNS{
+		token: "xx",
+		zone:  "xx",
+		name:  "*.bysir.top",
+	}
 
-	err := d.UpdateRecordByName(context.Background(), "xx", "*.bysir.top", "127.0.0.1")
+	err := d.UpdateRecord(context.Background(), "127.0.0.1")
 	if err != nil {
 		t.Fatal(err)
 	}
