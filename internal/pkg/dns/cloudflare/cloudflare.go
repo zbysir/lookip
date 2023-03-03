@@ -136,6 +136,8 @@ func (d *DNS) List(ctx context.Context, zone string, p Parms) (rs []Record, err 
 }
 
 func (d *DNS) GetRecord(ctx context.Context) (id Record, exist bool, err error) {
+	log.Printf("cloudflare GetRecord")
+
 	rs, err := d.List(ctx, d.zone, Parms{Name: d.name})
 	if err != nil {
 		return id, false, err
@@ -149,6 +151,7 @@ func (d *DNS) GetRecord(ctx context.Context) (id Record, exist bool, err error) 
 }
 
 func (d *DNS) UpdateRecord(ctx context.Context, content string) (err error) {
+	log.Printf("cloudflare UpdateRecord")
 	id, exist, err := d.GetRecord(ctx)
 	if err != nil {
 		return err
