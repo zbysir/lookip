@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -78,16 +79,17 @@ type Params struct {
 }
 
 func (d *CF) req(ctx context.Context, method string, url string, body interface{}, rsp interface{}) (err error) {
-	var buf *bytes.Buffer
+	var bodyReader io.Reader
 	if body != nil {
-		buf = &bytes.Buffer{}
-		err := json.NewEncoder(buf).Encode(body)
+		buf := bytes.Buffer{}
+		err := json.NewEncoder(&buf).Encode(body)
 		if err != nil {
 			return err
 		}
+		bodyReader = &buf
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, url, buf)
+	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
 	if err != nil {
 		return err
 	}
