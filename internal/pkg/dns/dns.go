@@ -6,8 +6,9 @@ import (
 )
 
 type DNS interface {
-	// UpdateRecord 更新记录, content: 域名解析的ip, proxied: 是否开启代理
-	UpdateRecord(ctx context.Context, content string) error
+	// UpdateRecord 更新记录, content: 域名解析的ip
+	// 如果 force 为 true，则当 content 前后一致时也会更新，默认不更新
+	UpdateRecord(ctx context.Context, content string, force bool) (bool, error)
 }
 
 type CombinedDNS struct {
@@ -18,14 +19,18 @@ func NewCombinedDNS(ds []DNS) *CombinedDNS {
 	return &CombinedDNS{ds: ds}
 }
 
-func (c *CombinedDNS) UpdateRecord(ctx context.Context, content string) error {
+func (c *CombinedDNS) UpdateRecord(ctx context.Context, content string, force bool) (bool, error) {
+	var affected bool
 	for _, d := range c.ds {
-		err := d.UpdateRecord(ctx, content)
+		aff, err := d.UpdateRecord(ctx, content, force)
 		if err != nil {
 			log.Printf("update record by name error: %s", err)
 		} else {
 			log.Printf("update record by name success")
 		}
+		if aff {
+			affected = true
+		}
 	}
-	return nil
+	return affected, nil
 }

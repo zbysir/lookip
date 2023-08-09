@@ -105,7 +105,7 @@ func main() {
 
 					switch d {
 					case "cloudflare":
-						dnss = append(dnss, cloudflare.NewDNS(cfToken, cfZoneId, name))
+						dnss = append(dnss, cloudflare.NewCF(cfToken, cfZoneId, name))
 					default:
 						dnss = append(dnss, alidns.NewAliDns(regionId, key, secret, domain, name))
 					}

@@ -17,7 +17,7 @@ type AliDns struct {
 	name   string // *.domain.com
 }
 
-func (a *AliDns) UpdateRecord(ctx context.Context, content string) error {
+func (a *AliDns) UpdateRecord(ctx context.Context, content string, force bool) (bool,error) {
 	domain := a.domain
 	name := a.name
 	// 只是完整域名的前段，如 *.domain.com 中的 *
@@ -27,9 +27,9 @@ func (a *AliDns) UpdateRecord(ctx context.Context, content string) error {
 	}
 	_, err := a.UpdateOrCreateDomainRecord(domain, rr, content)
 	if err != nil {
-		return err
+		return false,err
 	}
-	return nil
+	return true,nil
 }
 
 func NewAliDns(regionId, key, secret string, domain, name string) *AliDns {
@@ -78,7 +78,7 @@ func (a *AliDns) AddDomainRecord(domainName, RR, typ, value string) (recordId st
 	return
 }
 
-// 根据domain和rr更新或者创建记录
+// UpdateOrCreateDomainRecord 根据 domain 和 rr 更新或者创建记录
 func (a *AliDns) UpdateOrCreateDomainRecord(domain, rr, value string) (recordId string, err error) {
 	rs, err := a.GetDomainRecordByRR(domain, rr)
 	if err != nil {

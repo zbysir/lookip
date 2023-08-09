@@ -21,8 +21,6 @@ func NewIpWorker(dns dns.DNS, ipGetter public_ip.IpGetter) *IpWorker {
 	}
 }
 
-var nowIp = ""
-
 // LoopUpdateIp 将自己的公网 ip 上传到dns
 func (i *IpWorker) LoopUpdateIp(ctx context.Context) {
 	for {
@@ -39,19 +37,18 @@ func (i *IpWorker) LoopUpdateIp(ctx context.Context) {
 			continue
 		}
 
-		if ip != nowIp {
-			err := i.dns.UpdateRecord(context.Background(), ip)
-			if err != nil {
-				log.Print(err)
-				time.Sleep(3 * time.Second)
-				return
-			}
-
-			log.Printf("updateIp success: %s", ip)
-			nowIp = ip
+		aff, err := i.dns.UpdateRecord(context.Background(), ip, false)
+		if err != nil {
+			log.Print(err)
+			time.Sleep(3 * time.Second)
+			continue
 		}
 
-		t := time.NewTimer(60 * time.Second)
+		if aff {
+			log.Printf("updateIp success: %s", ip)
+		}
+
+		t := time.NewTimer(120 * time.Second)
 		select {
 		case <-ctx.Done():
 			t.Stop()
