@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -97,7 +97,7 @@ func (d *CF) req(ctx context.Context, method string, url string, body interface{
 		return err
 	}
 	defer rspr.Body.Close()
-	rspBody, _ := io.ReadAll(rspr.Body)
+	rspBody, _ := ioutil.ReadAll(rspr.Body)
 	if rspr.StatusCode != 200 {
 		return errors.New(fmt.Sprintf("%s", rspBody))
 	}
